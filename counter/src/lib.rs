@@ -32,8 +32,8 @@ pub fn process_instructions(
     let mut counter_account = CounterAccount::try_from_slice(&account.data.borrow())?;
 
     match instruction {
-        CounterInstructions::Increment => counter_account.counter += 1,
-        CounterInstructions::Decrement => counter_account.counter -= 1,
+        CounterInstructions::Increment(v) => counter_account.counter += v.value,
+        CounterInstructions::Decrement(v) => counter_account.counter -= v.value,
         CounterInstructions::Reset => counter_account.counter = 0,
         CounterInstructions::Update(v) => counter_account.counter = v.value,
     };
@@ -68,27 +68,29 @@ mod test {
         );
         let accounts = vec![account];
 
-        let increment_instruction_data = vec![0u8];
-        let decrement_instruction_data = vec![1u8];
+        let mut increment_instruction_data = vec![0u8];
+        let mut decrement_instruction_data = vec![1u8];
         let mut update_instruction_data = vec![2u8];
         let reset_instruction_data = vec![3u8];
 
         // Increment
+        increment_instruction_data.extend_from_slice(&2u32.to_le_bytes());
         process_instructions(&program_id, &accounts, &increment_instruction_data).unwrap();
         assert_eq!(
             CounterAccount::try_from_slice(&accounts[0].data.borrow())
                 .unwrap()
                 .counter,
-            1
+            2
         );
 
         // Decrement
+        decrement_instruction_data.extend_from_slice(&1u32.to_le_bytes());
         process_instructions(&program_id, &accounts, &decrement_instruction_data).unwrap();
         assert_eq!(
             CounterAccount::try_from_slice(&accounts[0].data.borrow())
                 .unwrap()
                 .counter,
-            0
+            1
         );
 
         // Update
